@@ -1,0 +1,20 @@
+# Raw input images — provisional sample set, not committed.
+data/raw/
+
+# Large intermediate/derived artefacts.
+data/interim/
+data/tiles/
+**/tiles/
+*.npy
+*.npz
+*.pt
+*.pth
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.egg-info/
+
+# OS / editor
+.DS_Store

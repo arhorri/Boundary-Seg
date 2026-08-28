@@ -1,0 +1,15 @@
+# Phase 1 pipeline configuration.
+#
+# All spatial parameters below are declared at `reference_magnification` and
+# must be resolved for the image being processed via scale_for_magnification()
+# (src/io_utils.py) before use anywhere in the pipeline — never used directly.
+# See CLAUDE.md, "Magnification handling".
+
+reference_magnification: 100
+
+random_seed: 42
+
+split:
+  # Approximate dev:test ratio; the exact per-magnification counts are
+  # computed from how many files are found, not hardcoded.
+  dev_test_ratio: [2, 1]
