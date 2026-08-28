@@ -115,7 +115,9 @@ def _iter_tiles(height: int, width: int, tile_size: int = TILE_SIZE_PX):
             yield tile_row, tile_col, row0, row1, col0, col1
 
 
-def _plot_heatmap(filename: str, tile_df: pd.DataFrame, heatmap_dir: Path) -> Path:
+def _plot_heatmap(
+    filename: str, tile_df: pd.DataFrame, heatmap_dir: Path, suffix: str = "_quality_heatmap.png"
+) -> Path:
     """Save a 2x2 grid of per-tile metric heatmaps for one image."""
     n_rows = int(tile_df["tile_row"].max()) + 1
     n_cols = int(tile_df["tile_col"].max()) + 1
@@ -138,7 +140,7 @@ def _plot_heatmap(filename: str, tile_df: pd.DataFrame, heatmap_dir: Path) -> Pa
     fig.suptitle(filename)
     fig.tight_layout()
     heatmap_dir.mkdir(parents=True, exist_ok=True)
-    out_path = heatmap_dir / f"{Path(filename).stem}_quality_heatmap.png"
+    out_path = heatmap_dir / f"{Path(filename).stem}{suffix}"
     fig.savefig(out_path, dpi=100)
     plt.close(fig)
     return out_path
@@ -210,65 +212,65 @@ def assess_image_quality(
     return rows
 
 
-def assess_quality(
-    crop_log_path: Path = normalise.CROP_LOG_PATH,
-    config_path: Path = io_utils.CONFIG_PATH,
-    output_csv_path: Path = QUALITY_CSV_PATH,
-    heatmap_dir: Path = HEATMAP_DIR,
-    tile_size: int = TILE_SIZE_PX,
-) -> pd.DataFrame:
-    """Run quality assessment over every normalised dev image and write quality_before.csv."""
-    config = io_utils.load_config(config_path)
+def resolve_quality_params(config: dict) -> dict:
+    """Pull the `quality:` config section, filled in with module defaults."""
     quality_cfg = config.get("quality", {})
-    laplacian_ksize = quality_cfg.get("laplacian_ksize", DEFAULT_LAPLACIAN_KSIZE)
-    illumination_sigma_100x = quality_cfg.get(
-        "illumination_sigma_at_100x_px", DEFAULT_ILLUMINATION_SIGMA_AT_100X_PX
-    )
-    illumination_flag_threshold = quality_cfg.get(
-        "illumination_flag_threshold", DEFAULT_ILLUMINATION_FLAG_THRESHOLD
-    )
-    noise_sigma_100x = quality_cfg.get("noise_sigma_at_100x_px", DEFAULT_NOISE_SIGMA_AT_100X_PX)
-    contrast_low_pct = quality_cfg.get("contrast_low_percentile", DEFAULT_CONTRAST_LOW_PERCENTILE)
-    contrast_high_pct = quality_cfg.get("contrast_high_percentile", DEFAULT_CONTRAST_HIGH_PERCENTILE)
+    return {
+        "laplacian_ksize": quality_cfg.get("laplacian_ksize", DEFAULT_LAPLACIAN_KSIZE),
+        "illumination_sigma_100x": quality_cfg.get(
+            "illumination_sigma_at_100x_px", DEFAULT_ILLUMINATION_SIGMA_AT_100X_PX
+        ),
+        "illumination_flag_threshold": quality_cfg.get(
+            "illumination_flag_threshold", DEFAULT_ILLUMINATION_FLAG_THRESHOLD
+        ),
+        "noise_sigma_100x": quality_cfg.get("noise_sigma_at_100x_px", DEFAULT_NOISE_SIGMA_AT_100X_PX),
+        "contrast_low_pct": quality_cfg.get("contrast_low_percentile", DEFAULT_CONTRAST_LOW_PERCENTILE),
+        "contrast_high_pct": quality_cfg.get("contrast_high_percentile", DEFAULT_CONTRAST_HIGH_PERCENTILE),
+    }
 
-    crop_log = pd.read_csv(crop_log_path)
-    if crop_log.empty:
-        raise ValueError(f"{crop_log_path} is empty; run src/normalise.py (Step 3) first.")
 
-    print(
-        f"laplacian_ksize={laplacian_ksize} (fixed, not scaled)  "
-        f"illumination_sigma_at_100x_px={illumination_sigma_100x}  "
-        f"noise_sigma_at_100x_px={noise_sigma_100x}  "
-        f"illumination_flag_threshold={illumination_flag_threshold}  "
-        f"config hash={io_utils.config_hash(config_path)}"
-    )
+def assess_quality_from_entries(
+    entries: pd.DataFrame,
+    image_path_column: str,
+    params: dict,
+    output_csv_path: Path,
+    heatmap_dir: Path,
+    tile_size: int = TILE_SIZE_PX,
+    heatmap_suffix: str = "_quality_heatmap.png",
+) -> pd.DataFrame:
+    """Shared core: compute whole-image + per-tile metrics for a set of (filename, magnification, path) rows.
 
+    Used by both assess_quality() (Step 4, normalised dev images) and
+    src/gate.py's re-check (Step 6, enhanced dev images) so the exact same
+    metric code runs on both, which is what makes the before/after
+    comparison meaningful.
+    """
     all_rows = []
-    for _, entry in crop_log.sort_values("filename").iterrows():
+    for _, entry in entries.sort_values("filename").iterrows():
         filename = entry["filename"]
         magnification = int(entry["magnification"])
-        image = np.load(io_utils.REPO_ROOT / entry["output_path"])
+        image = np.load(io_utils.REPO_ROOT / entry[image_path_column])
 
-        illumination_sigma_px = io_utils.scale_for_magnification(illumination_sigma_100x, magnification)
-        noise_sigma_px = io_utils.scale_for_magnification(noise_sigma_100x, magnification)
+        illumination_sigma_px = io_utils.scale_for_magnification(params["illumination_sigma_100x"], magnification)
+        noise_sigma_px = io_utils.scale_for_magnification(params["noise_sigma_100x"], magnification)
 
         rows = assess_image_quality(
             filename=filename,
             magnification=magnification,
             image=image,
-            laplacian_ksize=laplacian_ksize,
+            laplacian_ksize=params["laplacian_ksize"],
             illumination_sigma_px=illumination_sigma_px,
-            illumination_flag_threshold=illumination_flag_threshold,
+            illumination_flag_threshold=params["illumination_flag_threshold"],
             noise_sigma_px=noise_sigma_px,
-            contrast_low_pct=contrast_low_pct,
-            contrast_high_pct=contrast_high_pct,
+            contrast_low_pct=params["contrast_low_pct"],
+            contrast_high_pct=params["contrast_high_pct"],
             tile_size=tile_size,
         )
         all_rows.extend(rows)
 
         whole = rows[0]
         tile_df = pd.DataFrame([r for r in rows if r["scope"] == "tile"])
-        heatmap_path = _plot_heatmap(filename, tile_df, heatmap_dir)
+        heatmap_path = _plot_heatmap(filename, tile_df, heatmap_dir, suffix=heatmap_suffix)
 
         print(
             f"{filename} ({magnification}X, illum_sigma={illumination_sigma_px:.1f}px, "
@@ -288,6 +290,34 @@ def assess_quality(
     print("NOTE: focus_variance_of_laplacian is not comparable across magnifications; group by `magnification`.")
 
     return df
+
+
+def assess_quality(
+    crop_log_path: Path = normalise.CROP_LOG_PATH,
+    config_path: Path = io_utils.CONFIG_PATH,
+    output_csv_path: Path = QUALITY_CSV_PATH,
+    heatmap_dir: Path = HEATMAP_DIR,
+    tile_size: int = TILE_SIZE_PX,
+) -> pd.DataFrame:
+    """Run quality assessment over every normalised dev image and write quality_before.csv."""
+    config = io_utils.load_config(config_path)
+    params = resolve_quality_params(config)
+
+    crop_log = pd.read_csv(crop_log_path)
+    if crop_log.empty:
+        raise ValueError(f"{crop_log_path} is empty; run src/normalise.py (Step 3) first.")
+
+    print(
+        f"laplacian_ksize={params['laplacian_ksize']} (fixed, not scaled)  "
+        f"illumination_sigma_at_100x_px={params['illumination_sigma_100x']}  "
+        f"noise_sigma_at_100x_px={params['noise_sigma_100x']}  "
+        f"illumination_flag_threshold={params['illumination_flag_threshold']}  "
+        f"config hash={io_utils.config_hash(config_path)}"
+    )
+
+    return assess_quality_from_entries(
+        crop_log, "output_path", params, output_csv_path, heatmap_dir, tile_size
+    )
 
 
 if __name__ == "__main__":

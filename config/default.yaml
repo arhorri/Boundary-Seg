@@ -80,3 +80,17 @@ enhance:
   crop_size_in_grain_diameters: 8      # zoom-crop size for the acceptance figure, sized in
                                         # grain diameters (not fixed px) so crops are
                                         # comparable in specimen terms across magnifications
+
+gate:
+  # Step 6 QC re-check gate. All three thresholds are RELATIVE change of an
+  # image's own before/after metrics (never absolute), which is what makes
+  # the gate valid across magnifications without a separate threshold set
+  # per magnification -- see CLAUDE.md "Magnification handling". None of
+  # these three checks needs an absolute, magnification-keyed threshold;
+  # if a future gate criterion ever does, key it by magnification in this
+  # section and fail loudly (KeyError) on an unlisted magnification,
+  # exactly as colour_mode/normalise/quality already fail loudly on
+  # missing config.
+  illumination_relative_improvement_min: 0.5   # illum_range_frac must drop by >= 50%
+  noise_relative_increase_max: 0.0             # noise_mad_sigma must not increase
+  focus_relative_decrease_max: 0.0             # focus_variance_of_laplacian must not decrease
