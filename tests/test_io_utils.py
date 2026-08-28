@@ -10,6 +10,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 import io_utils  # noqa: E402
 
 
+def test_scale_for_magnification_scales_linearly():
+    assert io_utils.scale_for_magnification(30, 100, reference_magnification=100) == 30
+    assert io_utils.scale_for_magnification(30, 200, reference_magnification=100) == 60
+    assert io_utils.scale_for_magnification(30, 50, reference_magnification=100) == 15
+
+
+def test_scale_for_magnification_reads_reference_from_config():
+    if not io_utils.CONFIG_PATH.exists():
+        pytest.skip("config/default.yaml not present in this environment")
+    value = io_utils.scale_for_magnification(100, 200)
+    assert value == 200  # reference_magnification in config/default.yaml is 100
+
+
 def test_parse_filename_valid():
     parsed = io_utils.parse_filename("62990661-C-100X.JPG")
     assert parsed == {"sample_id": "62990661", "magnification": 100}

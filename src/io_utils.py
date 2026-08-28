@@ -54,6 +54,34 @@ def config_hash(config_path: Path = CONFIG_PATH) -> str:
     return hashlib.sha256(Path(config_path).read_bytes()).hexdigest()[:12]
 
 
+def scale_for_magnification(
+    value_at_100x: float,
+    magnification: float,
+    reference_magnification: Optional[float] = None,
+    config_path: Path = CONFIG_PATH,
+) -> float:
+    """Resolve a spatial parameter declared at reference magnification to the working value.
+
+    Every spatial parameter (a length in pixels: kernel radius, patch size,
+    expected feature size, tolerance, ...) is declared in config/default.yaml
+    at `reference_magnification` (100x) and must be resolved through this
+    function for the image actually being processed — features scale
+    linearly with magnification. See CLAUDE.md "Magnification handling".
+
+    Args:
+        value_at_100x: the parameter's value in pixels at reference magnification.
+        magnification: the magnification of the image being processed.
+        reference_magnification: overrides the config's reference magnification.
+        config_path: where to read the reference magnification from, if not given.
+
+    Returns:
+        The parameter's value in pixels, scaled for `magnification`.
+    """
+    if reference_magnification is None:
+        reference_magnification = load_config(config_path)["reference_magnification"]
+    return value_at_100x * (magnification / reference_magnification)
+
+
 def parse_filename(filename: str) -> dict:
     """Parse a raw-image filename into its sample id and magnification.
 
