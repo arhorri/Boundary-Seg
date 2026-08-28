@@ -95,6 +95,43 @@ gate:
   noise_relative_increase_max: 0.0             # noise_mad_sigma must not increase
   focus_relative_decrease_max: 0.0             # focus_variance_of_laplacian must not decrease
 
+models:
+  # Step 8 candidate boundary models. Spatial parameters declared at
+  # reference_magnification (100x); resolved per tile via
+  # scale_for_magnification. Grain diameter is read from `enhance:` (same
+  # underlying quantity, not duplicated here).
+  cellpose:
+    model_type: cyto3          # newest available generalist model
+    # diameter_at_100x_px intentionally omitted: cellpose reuses
+    # enhance.grain_diameter_at_100x_px (~40px) -- the same physical
+    # quantity, not a second source of truth.
+    boundary_gaussian_sigma_px: 1.0
+
+  sam:
+    # Segment Anything automatic mask generation. WARNING: this is the
+    # slow candidate -- roughly 10-20s/tile on a T4, much slower on CPU.
+    checkpoint_path: null       # must be set to a downloaded SAM checkpoint
+    model_type: vit_b           # smallest official checkpoint; vit_h is the largest/most accurate
+    points_per_side: 32
+    points_per_batch: 64
+    boundary_gaussian_sigma_px: 1.0
+
+  pidinet:
+    # See src/models/pidinet_model.py docstring for why this substitutes
+    # a different pretrained edge detector.
+    threshold: null            # null = keep the raw soft probability map
+
+  watershed:
+    # h controls resulting grain granularity (see watershed_model.py
+    # docstring for why an intensity threshold is scaled like a spatial
+    # parameter here).
+    gradient_smoothing_sigma_at_100x_px: 1.0
+    h_minima_depth_at_100x: 0.02
+    min_region_area_in_grain_areas: 0.1   # remove_small_objects floor, as a fraction of one grain's area
+
+  benchmark:
+    tiles_per_magnification: 2   # how many dev tiles per magnification to include in the comparison
+
 tiling:
   # Tile size is fixed by GPU memory, not the specimen -- the ONE spatial
   # parameter in this whole pipeline that does NOT go through

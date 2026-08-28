@@ -1,0 +1,17 @@
+tile_filename,source_filename,magnification,model,elapsed_seconds,status,detail
+62990661-C-100X_r00000_c00768.npy,62990661-C-100X.JPG,100,cellpose,,load_failed,operator torchvision::nms does not exist
+62990661-C-100X_r00000_c00768.npy,62990661-C-100X.JPG,100,sam,,load_failed,config models.sam.checkpoint_path is not set; download a SAM checkpoint (e.g. sam_vit_b_01ec64.pth from Meta's official release) and set its path.
+62990661-C-100X_r00000_c00768.npy,62990661-C-100X.JPG,100,pidinet,0.046958400000221445,ok,
+62990661-C-100X_r00000_c00768.npy,62990661-C-100X.JPG,100,watershed,0.16788809900026536,ok,
+62990661-C-100X_r00000_c01024.npy,62990661-C-100X.JPG,100,cellpose,,load_failed,operator torchvision::nms does not exist
+62990661-C-100X_r00000_c01024.npy,62990661-C-100X.JPG,100,sam,,load_failed,config models.sam.checkpoint_path is not set; download a SAM checkpoint (e.g. sam_vit_b_01ec64.pth from Meta's official release) and set its path.
+62990661-C-100X_r00000_c01024.npy,62990661-C-100X.JPG,100,pidinet,0.03345580000132031,ok,
+62990661-C-100X_r00000_c01024.npy,62990661-C-100X.JPG,100,watershed,0.15409479899972212,ok,
+62990661-C-200X_r00256_c01024.npy,62990661-C-200X.JPG,200,cellpose,,load_failed,operator torchvision::nms does not exist
+62990661-C-200X_r00256_c01024.npy,62990661-C-200X.JPG,200,sam,,load_failed,config models.sam.checkpoint_path is not set; download a SAM checkpoint (e.g. sam_vit_b_01ec64.pth from Meta's official release) and set its path.
+62990661-C-200X_r00256_c01024.npy,62990661-C-200X.JPG,200,pidinet,0.03317179999976361,ok,
+62990661-C-200X_r00256_c01024.npy,62990661-C-200X.JPG,200,watershed,0.13285979899956146,ok,
+62990661-R-200X_r00768_c02304.npy,62990661-R-200X.JPG,200,cellpose,,load_failed,operator torchvision::nms does not exist
+62990661-R-200X_r00768_c02304.npy,62990661-R-200X.JPG,200,sam,,load_failed,config models.sam.checkpoint_path is not set; download a SAM checkpoint (e.g. sam_vit_b_01ec64.pth from Meta's official release) and set its path.
+62990661-R-200X_r00768_c02304.npy,62990661-R-200X.JPG,200,pidinet,0.03291150000040943,ok,
+62990661-R-200X_r00768_c02304.npy,62990661-R-200X.JPG,200,watershed,0.1217047990012361,ok,
