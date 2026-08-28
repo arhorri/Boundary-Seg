@@ -94,3 +94,12 @@ gate:
   illumination_relative_improvement_min: 0.5   # illum_range_frac must drop by >= 50%
   noise_relative_increase_max: 0.0             # noise_mad_sigma must not increase
   focus_relative_decrease_max: 0.0             # focus_variance_of_laplacian must not decrease
+
+tiling:
+  # Tile size is fixed by GPU memory, not the specimen -- the ONE spatial
+  # parameter in this whole pipeline that does NOT go through
+  # scale_for_magnification. A 200x tile contains fewer grains than a
+  # 100x tile; that is correct and must not be compensated for. See
+  # CLAUDE.md "Magnification handling".
+  tile_size_px: 512
+  overlap_fraction: 0.5   # 50% overlap -> stride_px = tile_size_px * (1 - this) = 256
