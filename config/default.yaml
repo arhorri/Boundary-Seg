@@ -52,3 +52,31 @@ quality:
 
   contrast_low_percentile: 5
   contrast_high_percentile: 95
+
+enhance:
+  # Spatial parameters declared at reference_magnification (100x); resolved
+  # per image via scale_for_magnification.
+  flat_field_radius_at_100x_px: 200    # several x the ~30-50px 100x grain size
+  denoise_patch_size_at_100x_px: 3     # kept small deliberately: patch radius must
+                                        # stay under boundary_width_at_100x_px, checked
+                                        # by assert_denoise_preserves_boundaries()
+  denoise_patch_distance_at_100x_px: 6
+  clahe_kernel_size_at_100x_px: 200    # coarse relative to grain size, several x diameter
+  boundary_width_at_100x_px: 2.0       # thinnest-boundary limit denoise must not exceed
+  grain_diameter_at_100x_px: 40        # for sizing the acceptance-figure zoom crop
+
+  # Unitless / implementation parameters -- NOT run through
+  # scale_for_magnification (see CLAUDE.md "Magnification handling"):
+  # each is either a ratio, a multiplier, or a computational tractability
+  # knob rather than a specimen-scale length.
+  flat_field_working_radius_px: 20     # background estimation (rolling_ball) is run on a
+                                        # downsampled copy so the working radius stays near
+                                        # this value, then the smooth background is resized
+                                        # back up -- the corrected image itself is never
+                                        # resized, only the internal background model.
+  denoise_h_multiplier: 0.8            # NLM filter strength = this x the image's own
+                                        # estimated noise sigma (quality.noise_mad_sigma)
+  clahe_clip_limit: 0.01
+  crop_size_in_grain_diameters: 8      # zoom-crop size for the acceptance figure, sized in
+                                        # grain diameters (not fixed px) so crops are
+                                        # comparable in specimen terms across magnifications

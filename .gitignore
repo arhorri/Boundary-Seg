@@ -8,6 +8,9 @@ data/interim/*
 !data/interim/normalised/
 data/interim/normalised/*
 !data/interim/normalised/crop_log.csv
+!data/interim/enhanced/
+data/interim/enhanced/*
+!data/interim/enhanced/enhance_log.csv
 data/tiles/
 **/tiles/
 *.npy
