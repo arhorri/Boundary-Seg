@@ -13,3 +13,9 @@ split:
   # Approximate dev:test ratio; the exact per-magnification counts are
   # computed from how many files are found, not hardcoded.
   dev_test_ratio: [2, 1]
+
+colour_mode:
+  # Decided in Step 2 (src/colour_mode.py) from dev-split HSV
+  # statistics; downstream stages must read this, not re-decide it.
+  decision: colour
+  effect_size_threshold: 0.2
