@@ -1,8 +1,13 @@
 # Raw input images — provisional sample set, not committed.
 data/raw/
 
-# Large intermediate/derived artefacts.
-data/interim/
+# Large intermediate/derived artefacts. Trailing-slash directory ignores
+# prune traversal, which breaks later negations -- use `dir/*` instead so
+# specific files inside can still be re-included.
+data/interim/*
+!data/interim/normalised/
+data/interim/normalised/*
+!data/interim/normalised/crop_log.csv
 data/tiles/
 **/tiles/
 *.npy

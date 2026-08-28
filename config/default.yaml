@@ -19,3 +19,13 @@ colour_mode:
   # statistics; downstream stages must read this, not re-decide it.
   decision: colour
   effect_size_threshold: 0.2
+
+normalise:
+  # Border/annotation-bar detection is a unitless statistical test (a row
+  # or column's variance relative to the image's own typical row/column
+  # variance), not a specimen-scale length, so these are NOT run through
+  # scale_for_magnification: a burned-in annotation bar is emitted at a
+  # fixed sensor-plane pixel size by the microscope software and does not
+  # scale with specimen magnification. See CLAUDE.md "Magnification handling".
+  border_variance_ratio: 0.05
+  border_max_crop_fraction: 0.15

@@ -1,0 +1,5 @@
+filename,magnification,colour_mode,original_height,original_width,crop_top_px,crop_bottom_px,crop_left_px,crop_right_px,crop_capped,output_height,output_width,output_path
+62990661-C-100X.JPG,100,colour,2304,3456,0,0,0,0,False,2304,3456,data/interim/normalised/62990661-C-100X.npy
+62990661-C-200X.JPG,200,colour,2304,3456,0,0,0,0,False,2304,3456,data/interim/normalised/62990661-C-200X.npy
+62990661-R-100X.JPG,100,colour,2304,3456,0,0,0,0,False,2304,3456,data/interim/normalised/62990661-R-100X.npy
+62990661-R-200X.JPG,200,colour,2304,3456,0,0,0,0,False,2304,3456,data/interim/normalised/62990661-R-200X.npy
