@@ -77,6 +77,6 @@ class WatershedBoundaryModel(BoundaryModel):
         minima_markers = h_minima(gradient, h=self.h_minima_depth)
         markers = label(minima_markers)
         labels = watershed(gradient, markers=markers)
-        labels = remove_small_objects(labels, max_size=int(round(self.min_region_area_px2)))
+        labels = remove_small_objects(labels, min_size=int(round(self.min_region_area_px2)))
 
         return labels_to_boundary_probability(labels, sigma_px=1.0)

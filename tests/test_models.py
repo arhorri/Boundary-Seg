@@ -88,7 +88,14 @@ def test_watershed_model_predicts_valid_boundary_map_on_synthetic_tile():
     validate_boundary_map(tile, boundary_map)
 
 
-def test_watershed_model_predicts_on_real_tile():
+@pytest.mark.parametrize("magnification", [100, 200])
+def test_watershed_model_predicts_on_real_tile(magnification):
+    # Regression coverage for a bug that shipped because only 100X was ever
+    # exercised here: remove_small_objects was called with max_size instead
+    # of min_size. The wrong kwarg name would have failed at either
+    # magnification, but min_region_area_px2 itself is magnification-scaled
+    # (~4x larger at 200X), so a value-only bug in the scaled threshold could
+    # easily have been 100X-only -- both magnifications must run predict().
     tile_log_path = io_utils.REPO_ROOT / "data" / "interim" / "tile_log.csv"
     if not tile_log_path.exists():
         pytest.skip("data/interim/tile_log.csv not present; run Step 7 first")
@@ -96,10 +103,12 @@ def test_watershed_model_predicts_on_real_tile():
     import pandas as pd
 
     tile_log = pd.read_csv(tile_log_path)
-    row = tile_log[tile_log["magnification"] == 100].iloc[0]
-    tile = np.load(row["tile_path"])
+    matches = tile_log[tile_log["magnification"] == magnification]
+    if matches.empty:
+        pytest.skip(f"no {magnification}X tiles logged")
+    tile = np.load(matches.iloc[0]["tile_path"])
 
-    model = WatershedBoundaryModel(magnification=100)
+    model = WatershedBoundaryModel(magnification=magnification)
     boundary_map = model.predict(tile)
     validate_boundary_map(tile, boundary_map)
 
