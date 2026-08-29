@@ -12,6 +12,9 @@ data/interim/normalised/*
 data/interim/enhanced/*
 !data/interim/enhanced/enhance_log.csv
 !data/interim/tile_log.csv
+!data/interim/predictions/
+data/interim/predictions/*
+!data/interim/predictions/inference_log.csv
 data/tiles/
 **/tiles/
 *.npy
