@@ -1,142 +1,55 @@
-# Phase 1 pipeline configuration.
-#
-# All spatial parameters below are declared at `reference_magnification` and
-# must be resolved for the image being processed via scale_for_magnification()
-# (src/io_utils.py) before use anywhere in the pipeline — never used directly.
-# See CLAUDE.md, "Magnification handling".
-
 reference_magnification: 100
-
 random_seed: 42
-
 split:
-  # Approximate dev:test ratio; the exact per-magnification counts are
-  # computed from how many files are found, not hardcoded.
-  dev_test_ratio: [2, 1]
-
+  dev_test_ratio:
+  - 2
+  - 1
 colour_mode:
-  # Decided in Step 2 (src/colour_mode.py) from dev-split HSV
-  # statistics; downstream stages must read this, not re-decide it.
   decision: colour
   effect_size_threshold: 0.2
-
 normalise:
-  # Border/annotation-bar detection is a unitless statistical test (a row
-  # or column's variance relative to the image's own typical row/column
-  # variance), not a specimen-scale length, so these are NOT run through
-  # scale_for_magnification: a burned-in annotation bar is emitted at a
-  # fixed sensor-plane pixel size by the microscope software and does not
-  # scale with specimen magnification. See CLAUDE.md "Magnification handling".
   border_variance_ratio: 0.05
   border_max_crop_fraction: 0.15
-
 quality:
-  # Fixed, not scaled: a small isotropic second-derivative kernel used only
-  # to rank sharpness WITHIN a magnification group. Variance of the
-  # Laplacian is not comparable across magnifications by design (report
-  # and group by magnification; never compare raw) -- see CLAUDE.md.
   laplacian_ksize: 3
-
-  # Spatial parameters declared at reference_magnification (100x); resolved
-  # per image via scale_for_magnification. illumination_sigma is "large"
-  # relative to a 100x grain (~30-50 px) so the fit smooths past individual
-  # grains and captures only slow illumination drift; noise_sigma is
-  # "small" (sub-grain-boundary) so the high-pass residual isolates pixel
-  # noise rather than boundary structure.
   illumination_sigma_at_100x_px: 200
   noise_sigma_at_100x_px: 1.0
-
-  # Fraction of the image's own dynamic range; a fitted illumination range
-  # above this is flagged as non-uniform.
-  illumination_flag_threshold: 0.10
-
+  illumination_flag_threshold: 0.1
   contrast_low_percentile: 5
   contrast_high_percentile: 95
-
 enhance:
-  # Spatial parameters declared at reference_magnification (100x); resolved
-  # per image via scale_for_magnification.
-  flat_field_radius_at_100x_px: 200    # several x the ~30-50px 100x grain size
-  denoise_patch_size_at_100x_px: 3     # kept small deliberately: patch radius must
-                                        # stay under boundary_width_at_100x_px, checked
-                                        # by assert_denoise_preserves_boundaries()
+  flat_field_radius_at_100x_px: 200
+  denoise_patch_size_at_100x_px: 3
   denoise_patch_distance_at_100x_px: 6
-  clahe_kernel_size_at_100x_px: 200    # coarse relative to grain size, several x diameter
-  boundary_width_at_100x_px: 2.0       # thinnest-boundary limit denoise must not exceed
-  grain_diameter_at_100x_px: 40        # for sizing the acceptance-figure zoom crop
-
-  # Unitless / implementation parameters -- NOT run through
-  # scale_for_magnification (see CLAUDE.md "Magnification handling"):
-  # each is either a ratio, a multiplier, or a computational tractability
-  # knob rather than a specimen-scale length.
-  flat_field_working_radius_px: 20     # background estimation (rolling_ball) is run on a
-                                        # downsampled copy so the working radius stays near
-                                        # this value, then the smooth background is resized
-                                        # back up -- the corrected image itself is never
-                                        # resized, only the internal background model.
-  denoise_h_multiplier: 0.8            # NLM filter strength = this x the image's own
-                                        # estimated noise sigma (quality.noise_mad_sigma)
+  clahe_kernel_size_at_100x_px: 200
+  boundary_width_at_100x_px: 2.0
+  grain_diameter_at_100x_px: 40
+  flat_field_working_radius_px: 20
+  denoise_h_multiplier: 0.8
   clahe_clip_limit: 0.01
-  crop_size_in_grain_diameters: 8      # zoom-crop size for the acceptance figure, sized in
-                                        # grain diameters (not fixed px) so crops are
-                                        # comparable in specimen terms across magnifications
-
+  crop_size_in_grain_diameters: 8
 gate:
-  # Step 6 QC re-check gate. All three thresholds are RELATIVE change of an
-  # image's own before/after metrics (never absolute), which is what makes
-  # the gate valid across magnifications without a separate threshold set
-  # per magnification -- see CLAUDE.md "Magnification handling". None of
-  # these three checks needs an absolute, magnification-keyed threshold;
-  # if a future gate criterion ever does, key it by magnification in this
-  # section and fail loudly (KeyError) on an unlisted magnification,
-  # exactly as colour_mode/normalise/quality already fail loudly on
-  # missing config.
-  illumination_relative_improvement_min: 0.5   # illum_range_frac must drop by >= 50%
-  noise_relative_increase_max: 0.0             # noise_mad_sigma must not increase
-  focus_relative_decrease_max: 0.0             # focus_variance_of_laplacian must not decrease
-
+  illumination_relative_improvement_min: 0.5
+  noise_relative_increase_max: 0.0
+  focus_relative_decrease_max: 0.0
 models:
-  # Step 8 candidate boundary models. Spatial parameters declared at
-  # reference_magnification (100x); resolved per tile via
-  # scale_for_magnification. Grain diameter is read from `enhance:` (same
-  # underlying quantity, not duplicated here).
   cellpose:
-    model_type: cyto3          # newest available generalist model
-    # diameter_at_100x_px intentionally omitted: cellpose reuses
-    # enhance.grain_diameter_at_100x_px (~40px) -- the same physical
-    # quantity, not a second source of truth.
+    model_type: cyto3
     boundary_gaussian_sigma_px: 1.0
-
   sam:
-    # Segment Anything automatic mask generation. WARNING: this is the
-    # slow candidate -- roughly 10-20s/tile on a T4, much slower on CPU.
-    checkpoint_path: null       # must be set to a downloaded SAM checkpoint
-    model_type: vit_b           # smallest official checkpoint; vit_h is the largest/most accurate
+    checkpoint_path: /content/drive/MyDrive/sam_checkpoints/sam_vit_h_4b8939.pth
+    model_type: vit_h
     points_per_side: 32
     points_per_batch: 64
     boundary_gaussian_sigma_px: 1.0
-
   pidinet:
-    # See src/models/pidinet_model.py docstring for why this substitutes
-    # a different pretrained edge detector.
-    threshold: null            # null = keep the raw soft probability map
-
+    threshold: null
   watershed:
-    # h controls resulting grain granularity (see watershed_model.py
-    # docstring for why an intensity threshold is scaled like a spatial
-    # parameter here).
     gradient_smoothing_sigma_at_100x_px: 1.0
     h_minima_depth_at_100x: 0.02
-    min_region_area_in_grain_areas: 0.1   # remove_small_objects floor, as a fraction of one grain's area
-
+    min_region_area_in_grain_areas: 0.1
   benchmark:
-    tiles_per_magnification: 2   # how many dev tiles per magnification to include in the comparison
-
+    tiles_per_magnification: 2
 tiling:
-  # Tile size is fixed by GPU memory, not the specimen -- the ONE spatial
-  # parameter in this whole pipeline that does NOT go through
-  # scale_for_magnification. A 200x tile contains fewer grains than a
-  # 100x tile; that is correct and must not be compensated for. See
-  # CLAUDE.md "Magnification handling".
   tile_size_px: 512
-  overlap_fraction: 0.5   # 50% overlap -> stride_px = tile_size_px * (1 - this) = 256
+  overlap_fraction: 0.5
