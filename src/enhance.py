@@ -96,7 +96,9 @@ def estimate_background(
         small = channel.astype(np.float32)
         small_radius = radius_px
 
-    small_background = rolling_ball(small.astype(np.float64), radius=small_radius, workers=-1).astype(np.float32)
+    small_background = rolling_ball(
+        small.astype(np.float64), radius=small_radius, num_threads=None
+    ).astype(np.float32)
 
     if downsample_factor > 1:
         background = cv2.resize(small_background, (width, height), interpolation=cv2.INTER_CUBIC)
